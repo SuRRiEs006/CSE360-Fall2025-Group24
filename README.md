@@ -1,9 +1,9 @@
 # Team Project 1 – Software Engineering
 
 ## 📌 Overview
-This repository contains the submission for **Team Project 1**.  
-The project builds on provided foundational code and enhances it with new functionality, input validation, updated documentation, and testing.  
-The goal is to simulate working in a **high-performance software engineering team**, addressing real-world issues such as collaboration, code integration, input validation, testing, and professional documentation.
+- This repository contains the submission for **Team Project 1**.  
+- The project builds on provided foundational code and enhances it with new functionality, input validation, updated documentation, and testing.  
+- The goal is to simulate working in a **high-performance software engineering team**, addressing real-world issues such as collaboration, code integration, input validation, testing, and professional documentation.
 
 ---
 
