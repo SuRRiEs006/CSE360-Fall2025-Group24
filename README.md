@@ -63,5 +63,5 @@ Each team member participates equally in presenting the screencasts.
 ## 🛠️ How to Run the Application
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd team-project-1
+    git clone https://github.com/SuRRiEs006/CSE360-Fall2016-Group12.git
+    cd CSE360-Fall2016-Group12
