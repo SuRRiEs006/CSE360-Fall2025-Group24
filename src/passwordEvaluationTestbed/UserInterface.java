@@ -1,15 +1,26 @@
-
 package passwordEvaluationTestbed;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+//////////////////////////////////////////////////////////////
+// ADDED
+import javafx.scene.control.Button;
+//////////////////////////////////////////////////////////////
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+//////////////////////////////////////////////////////////////
+// ADDED
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+//////////////////////////////////////////////////////////////
 
 /**
  * <p> Title: UserInterface Class. </p>
@@ -49,6 +60,27 @@ public class UserInterface {
     private Label label_NumericDigit = new Label("At least one numeric digit");
     private Label label_SpecialChar = new Label("At least one special character");
     private Label label_LongEnough = new Label("At least eight characters");
+
+    //////////////////////////////////////////////////////////////
+    // ADDED: New single-line inputs in requested order:
+    // Name -> Address -> Email (Password is last)
+    //////////////////////////////////////////////////////////////
+    private Label label_Name = new Label("Enter your name");
+    private TextField text_Name = new TextField();
+
+    private Label label_Address = new Label("Enter your address");
+    private TextField text_Address = new TextField();
+
+    private Label label_Email = new Label("Enter your email");
+    private TextField text_Email = new TextField();
+    //////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////
+    // ADDED: Submit button + save status message
+    //////////////////////////////////////////////////////////////
+    private Button button_Submit = new Button("Submit");
+    private Label label_SaveStatus = new Label("");
+    //////////////////////////////////////////////////////////////
 	
 	/**********************************************************************************************
 
@@ -62,39 +94,49 @@ public class UserInterface {
 	 */
 	public UserInterface(Pane theRoot) {
 		
-		// Label theScene with the name of the testbed, centered at the top of the pane
+		// Title
 		setupLabelUI(label_ApplicationTitle, "Arial", 24, PasswordEvaluationGUITestbed.WINDOW_WIDTH, 
 				Pos.CENTER, 0, 10);
-		
-		// Label the password input field with a title just above it, left aligned
+
+        // ORDER: Name
+        setupLabelUI(label_Name, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10,
+                Pos.BASELINE_LEFT, 10, 50);
+        setupTextUI(text_Name, "Arial", 18, PasswordEvaluationGUITestbed.WINDOW_WIDTH-20,
+                Pos.BASELINE_LEFT, 10, 70, true);
+
+        // ORDER: Address
+        setupLabelUI(label_Address, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10,
+                Pos.BASELINE_LEFT, 10, 110);
+        setupTextUI(text_Address, "Arial", 18, PasswordEvaluationGUITestbed.WINDOW_WIDTH-20,
+                Pos.BASELINE_LEFT, 10, 130, true);
+
+        // ORDER: Email
+        setupLabelUI(label_Email, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10,
+                Pos.BASELINE_LEFT, 10, 170);
+        setupTextUI(text_Email, "Arial", 18, PasswordEvaluationGUITestbed.WINDOW_WIDTH-20,
+                Pos.BASELINE_LEFT, 10, 190, true);
+
+        // ORDER: Password (LAST)
 		setupLabelUI(label_Password, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 10, 50);
-		
-		// Establish the text input operand field and when anything changes in the password,
-		// the code will process the entire input to ensure that it is valid or in error.
+				Pos.BASELINE_LEFT, 10, 230);
 		setupTextUI(text_Password, "Arial", 18, PasswordEvaluationGUITestbed.WINDOW_WIDTH-20,
-				Pos.BASELINE_LEFT, 10, 70, true);
+				Pos.BASELINE_LEFT, 10, 250, true);
 		text_Password.textProperty().addListener((observable, oldValue, newValue) 
-				-> {setPassword(); });
+				-> { setPassword(); });
 		
-		// Establish an error message for when there is no input
+		// "no input" message
 		noInputFound.setTextFill(Color.RED);
 		noInputFound.setAlignment(Pos.BASELINE_LEFT);
 		setupLabelUI(noInputFound, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 10, 110);		
+				Pos.BASELINE_LEFT, 10, 285);		
 		
-		// Establish an error message for the password, left aligned
+		// Error line
 		label_errPassword.setTextFill(Color.RED);
 		label_errPassword.setAlignment(Pos.BASELINE_RIGHT);
 		setupLabelUI(label_errPassword, "Arial", 14,  
-						PasswordEvaluationGUITestbed.WINDOW_WIDTH-150-10, Pos.BASELINE_LEFT, 22, 126);		
+						PasswordEvaluationGUITestbed.WINDOW_WIDTH-150-10, Pos.BASELINE_LEFT, 22, 311);		
 		
-		// Establish the Go button, position it, and link it to methods to accomplish its work
-		//setupButtonUI(button_Go, "Symbol", 24, BUTTON_WIDTH, Pos.BASELINE_LEFT, 
-		//				PasswordEvaluationTestbed.WINDOW_WIDTH/2-BUTTON_WIDTH, 130);
-		//button_Go.setOnAction((event) -> { performGo(); });
-		
-		// Error Message components for the Password
+		// Arrow/caret trace
 		errPasswordPart1.setFill(Color.BLACK);
 	    errPasswordPart1.setFont(Font.font("Arial", FontPosture.REGULAR, 18));
 	    errPasswordPart2.setFill(Color.RED);
@@ -102,47 +144,71 @@ public class UserInterface {
 	    errPassword = new TextFlow(errPasswordPart1, errPasswordPart2);
 		errPassword.setMinWidth(PasswordEvaluationGUITestbed.WINDOW_WIDTH-10); 
 		errPassword.setLayoutX(22);  
-		errPassword.setLayoutY(100);
+		errPassword.setLayoutY(285);
 		
-		setupLabelUI(errPasswordPart3, "Arial", 14, 200, Pos.BASELINE_LEFT, 20, 125);	
+		setupLabelUI(errPasswordPart3, "Arial", 14, 200, Pos.BASELINE_LEFT, 20, 310);	
 
+        //////////////////////////////////////////////////////////////
+        // ADDED: Submit + status
+        //////////////////////////////////////////////////////////////
+        button_Submit.setFont(Font.font("Arial", 16));
+        button_Submit.setPrefWidth(160);
+        button_Submit.setLayoutX(10);
+        button_Submit.setLayoutY(340);
+        button_Submit.setOnAction(e -> saveInfo());
+
+        label_SaveStatus.setTextFill(Color.GREEN);
+        setupLabelUI(label_SaveStatus, "Arial", 14,
+                PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, Pos.BASELINE_LEFT, 180, 343);
+        //////////////////////////////////////////////////////////////
 		
-		// Position the requirements assessment display
+		// Requirements block
 	    setupLabelUI(label_Requirements, "Arial", 16, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 10, 200);
+				Pos.BASELINE_LEFT, 10, 380);
 	    setupLabelUI(label_UpperCase, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 30, 230);
+				Pos.BASELINE_LEFT, 30, 410);
 	    label_UpperCase.setTextFill(Color.RED);
-	    	    label_LowerCase.setText("At least one lower case letter");
 
-	    	    setupLabelUI(label_LowerCase, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 30, 260);
+	    label_LowerCase.setText("At least one lower case letter");
+	    setupLabelUI(label_LowerCase, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
+				Pos.BASELINE_LEFT, 30, 435);
 	    label_LowerCase.setTextFill(Color.RED);
 	    
 	    setupLabelUI(label_NumericDigit, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 30, 290);
+				Pos.BASELINE_LEFT, 30, 460);
 	    label_NumericDigit.setTextFill(Color.RED);
 	    
 	    setupLabelUI(label_SpecialChar, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 30, 320);
+				Pos.BASELINE_LEFT, 30, 485);
 	    label_SpecialChar.setTextFill(Color.RED);
 	    
 	    setupLabelUI(label_LongEnough, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 30, 350);
+				Pos.BASELINE_LEFT, 30, 510);
 	    label_LongEnough.setTextFill(Color.RED);
 		resetAssessments();
 		
-		// Setup the valid Password message
+		// Valid/invalid summary line
 		validPassword.setTextFill(Color.GREEN);
 		validPassword.setAlignment(Pos.BASELINE_RIGHT);
 		setupLabelUI(validPassword, "Arial", 18,  
-						PasswordEvaluationGUITestbed.WINDOW_WIDTH-150-10, Pos.BASELINE_LEFT, 10, 380);				
+						PasswordEvaluationGUITestbed.WINDOW_WIDTH-150-10, Pos.BASELINE_LEFT, 10, 545);				
 
-		// Place all of the just-initialized GUI elements into the pane, whether they have text or not
-		theRoot.getChildren().addAll(label_ApplicationTitle, label_Password, text_Password, 
+		// Add everything
+		theRoot.getChildren().addAll(
+				label_ApplicationTitle, 
+                //////////////////////////////////////////////////////////////
+                // ADDED: include new inputs + button + status
+                //////////////////////////////////////////////////////////////
+                label_Name, text_Name,
+                label_Address, text_Address,
+                label_Email, text_Email,
+                button_Submit, label_SaveStatus,
+                //////////////////////////////////////////////////////////////
+				label_Password, text_Password, 
 				noInputFound, label_errPassword, errPassword, errPasswordPart3, validPassword,
 				label_Requirements, label_UpperCase, label_LowerCase, label_NumericDigit,
-				label_SpecialChar, label_LongEnough);
+				label_SpecialChar, label_LongEnough
+        );
 	}
 	
 	/**********
@@ -194,14 +260,13 @@ public class UserInterface {
 		{
 			String errMessage = PasswordEvaluator.evaluatePassword(inputText);
 			updateFlags();
-			if (errMessage != "") {
-				System.out.println(errMessage);
-				
+
+			// Correct Java check (not reference-compare)
+			if (!errMessage.isEmpty()) {
 				label_errPassword.setText(PasswordEvaluator.passwordErrorMessage);
 				if (PasswordEvaluator.passwordIndexofError <= -1) return;
 				String input = PasswordEvaluator.passwordInput;
-				errPasswordPart1.setText(input.substring(0, 
-						PasswordEvaluator.passwordIndexofError));
+				errPasswordPart1.setText(input.substring(0, PasswordEvaluator.passwordIndexofError));
 				errPasswordPart2.setText("\u21EB");
 				validPassword.setTextFill(Color.RED);
 				errPasswordPart3.setText("The red arrow points at the character causing the error!");
@@ -210,8 +275,6 @@ public class UserInterface {
 			else if (PasswordEvaluator.foundUpperCase && PasswordEvaluator.foundLowerCase &&
 					PasswordEvaluator.foundNumericDigit && PasswordEvaluator.foundSpecialChar &&
 					PasswordEvaluator.foundLongEnough) {
-				
-				System.out.println("Success! The password satisfies the requirements.");
 				validPassword.setTextFill(Color.GREEN);
 				validPassword.setText("Success! The password satisfies the requirements.");
 			} else {
@@ -224,27 +287,27 @@ public class UserInterface {
 	protected void resetAssessments() {
 	    label_UpperCase.setText("At least one upper case letter - Not yet satisfied");
 	    setupLabelUI(label_UpperCase, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 30, 230);
+				Pos.BASELINE_LEFT, 30, 410);
 	    label_UpperCase.setTextFill(Color.RED);
 	    
 	    label_LowerCase.setText("At least one lower case letter - Not yet satisfied");
 	    setupLabelUI(label_LowerCase, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 30, 260);
+				Pos.BASELINE_LEFT, 30, 435);
 	    label_LowerCase.setTextFill(Color.RED);
 	    
 	    label_NumericDigit.setText("At least one numeric digit - Not yet satisfied");
 	    setupLabelUI(label_NumericDigit, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 30, 290);
+				Pos.BASELINE_LEFT, 30, 460);
 	    label_NumericDigit.setTextFill(Color.RED);
 	    
 	    label_SpecialChar.setText("At least one special character - Not yet satisfied");
 	    setupLabelUI(label_SpecialChar, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 30, 320);
+				Pos.BASELINE_LEFT, 30, 485);
 	    label_SpecialChar.setTextFill(Color.RED);
 	    
 	    label_LongEnough.setText("At least eight characters - Not yet satisfied");
 	    setupLabelUI(label_LongEnough, "Arial", 14, PasswordEvaluationGUITestbed.WINDOW_WIDTH-10, 
-				Pos.BASELINE_LEFT, 30, 350);
+				Pos.BASELINE_LEFT, 30, 510);
 	    label_LongEnough.setTextFill(Color.RED);
 	    errPasswordPart3.setText("");
 	}
@@ -275,4 +338,56 @@ public class UserInterface {
 			label_LongEnough.setTextFill(Color.GREEN);
 		}
 	}
+
+	//////////////////////////////////////////////////////////////
+	// ADDED: Save name/address/email locally as CSV, then wipe
+	// inputs (including password) and reset the readouts.
+	//////////////////////////////////////////////////////////////
+	private void saveInfo() {
+		label_SaveStatus.setTextFill(Color.RED);
+		label_SaveStatus.setText("");
+
+		String name = text_Name.getText().trim();
+		String address = text_Address.getText().trim();
+		String email = text_Email.getText().trim();
+
+		// light validation
+		if (name.isEmpty()) { label_SaveStatus.setText("Enter your name."); return; }
+		if (address.isEmpty()) { label_SaveStatus.setText("Enter your address."); return; }
+		if (email.isEmpty() || !email.contains("@")) { label_SaveStatus.setText("Enter a valid email."); return; }
+
+		Path out = Path.of(System.getProperty("user.home"), "password_testbed_submissions.csv");
+		String ts = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+		String line = String.format("\"%s\",\"%s\",\"%s\",\"%s\"%n",
+				escapeCsv(ts), escapeCsv(name), escapeCsv(address), escapeCsv(email));
+
+		try {
+			if (!Files.exists(out)) {
+				Files.writeString(out, "timestamp,name,address,email\n", StandardOpenOption.CREATE);
+			}
+			Files.write(out, line.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+			label_SaveStatus.setTextFill(Color.GREEN);
+			label_SaveStatus.setText("Saved locally to " + out.toString());
+
+			// Wipe inputs and reset UI after successful save
+			text_Name.clear();
+			text_Address.clear();
+			text_Email.clear();
+			text_Password.clear();
+			label_errPassword.setText("");
+			noInputFound.setText("");
+			errPasswordPart1.setText("");
+			errPasswordPart2.setText("");
+			errPasswordPart3.setText("");
+			validPassword.setText("");
+			resetAssessments();
+
+		} catch (Exception ex) {
+			label_SaveStatus.setTextFill(Color.RED);
+			label_SaveStatus.setText("Save failed: " + ex.getMessage());
+		}
+	}
+
+	private String escapeCsv(String s) { return s.replace("\"", "\"\""); }
+	//////////////////////////////////////////////////////////////
 }

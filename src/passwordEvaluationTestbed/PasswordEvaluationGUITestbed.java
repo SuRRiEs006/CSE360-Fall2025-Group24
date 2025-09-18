@@ -22,7 +22,7 @@ import javafx.stage.Stage;
 public class PasswordEvaluationGUITestbed extends Application {
 	
 	public final static double WINDOW_WIDTH = 500;
-	public final static double WINDOW_HEIGHT = 430;
+	public final static double WINDOW_HEIGHT = 800;
 	
 	public UserInterface theGUI;
 
