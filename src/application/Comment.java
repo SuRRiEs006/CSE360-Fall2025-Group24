@@ -14,11 +14,17 @@ public class Comment {
         this.text = text;
         this.createdBy = createdBy;
     }
-
+    
+    //Getters
     public int getId() { return id; }
     public Integer getQuestionId() { return questionId; }
     public Integer getAnswerId() { return answerId; }
     public String getText() { return text; }
     public String getCreatedBy() { return createdBy; }
+    
+    //Setter
+    public void setText(String text) {
+        this.text = text;
+    }
 }
 

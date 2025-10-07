@@ -88,6 +88,15 @@ public class CommentManager {
         return list;
     }
     
+    public void updateComment(int id, String newText) throws SQLException {
+        String sql = "UPDATE comments SET text = ? WHERE id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, newText);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        }
+    }
+    
     public void deleteComment(int id) throws SQLException {
         String sql = "DELETE FROM comments WHERE id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {

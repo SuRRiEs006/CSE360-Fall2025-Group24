@@ -85,14 +85,14 @@ public class AnswerManager {
     
     public void markAcceptedAnswer(int answerId, int questionId) throws SQLException {
         //  reset all answers for this question to not accepted
-        String resetSql = "UPDATE answers SET isAccepted = FALSE WHERE questionId = ?";
+        String resetSql = "UPDATE answers SET accepted = FALSE WHERE questionId = ?";
         try (PreparedStatement ps = connection.prepareStatement(resetSql)) {
             ps.setInt(1, questionId);
             ps.executeUpdate();
         }
 
         // mark the chosen answer as accepted
-        String acceptSql = "UPDATE answers SET isAccepted = TRUE WHERE id = ?";
+        String acceptSql = "UPDATE answers SET accepted = TRUE WHERE id = ?";
         try (PreparedStatement ps = connection.prepareStatement(acceptSql)) {
             ps.setInt(1, answerId);
             ps.executeUpdate();
