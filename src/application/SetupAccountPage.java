@@ -113,20 +113,26 @@ public class SetupAccountPage {
             }
 
             try {
-                // Ask the DB how many users exist
-                int userCount = db.getUserCount();   // implement this in DatabaseHelper
-                String role = (userCount == 0) ? "admin" : "student";
-
-                User user = new User(password, role, name, address, email);
-                db.registerFull(user);
+                User user = new User(password, name, address, email); // use the 4‑arg constructor
+                db.registerFull(user); // DB layer assigns role
 
                 status.setStyle("-fx-text-fill: green;");
-                status.setText("Account created as " + role + ".");
-                new WelcomeLoginPage(db, qMgr, aMgr, user).show(primaryStage);
+                status.setText("Account created successfully.");
+
+                // Fetch back from DB if you want the fully populated user
+                user = db.getUserByEmail(email);
+                
+                UserManager uMgr = new UserManager(db);
+                CommentManager cMgr = new CommentManager(db.getConnection());
+
+                RouteManager router = new RouteManager(db, qMgr, aMgr, uMgr, cMgr, user);
+
+                String role = user.getRoles().iterator().next();
+                router.showDashboardFor(user, role, primaryStage);
 
             } catch (Exception ex) {
                 status.setText("Error: " + ex.getMessage());
-            } 
+            }
         });
         
         VBox layout = new VBox(10,
@@ -150,9 +156,5 @@ public class SetupAccountPage {
         	primaryStage.setScene(new Scene(layout, 800, 400));
         	primaryStage.setTitle("Account setup");
         	primaryStage.show();
-        layout.setStyle("-fx-padding: 20; -fx-alignment: center;");
-        primaryStage.setScene(new Scene(layout, 800, 400));
-        primaryStage.setTitle("Account setup");
-        primaryStage.show();
         }
     }

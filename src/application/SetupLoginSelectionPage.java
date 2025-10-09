@@ -16,11 +16,15 @@ public class SetupLoginSelectionPage {
 	private final DatabaseHelper db;
     private final QuestionManager qMgr;
     private final AnswerManager aMgr;
+    private final UserManager uMgr;
+    private final CommentManager cMgr;
     
-    public SetupLoginSelectionPage(DatabaseHelper db, QuestionManager qMgr, AnswerManager aMgr) {
+    public SetupLoginSelectionPage(DatabaseHelper db, QuestionManager qMgr, AnswerManager aMgr, UserManager uMgr, CommentManager cMgr) {
         this.db = db;
         this.qMgr = qMgr;
         this.aMgr = aMgr;
+        this.uMgr = uMgr;
+        this.cMgr = cMgr;
     }
 
     public void show(Stage primaryStage) {
@@ -33,7 +37,7 @@ public class SetupLoginSelectionPage {
             new SetupAccountPage(db, qMgr, aMgr).show(primaryStage);
         });
         loginButton.setOnAction(a -> {
-        	new UserLoginPage(db, qMgr, aMgr).show(primaryStage);
+        	new UserLoginPage(db, qMgr, aMgr, uMgr, cMgr).show(primaryStage);
         });
 
         VBox layout = new VBox(10);

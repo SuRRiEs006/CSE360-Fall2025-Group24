@@ -21,7 +21,9 @@ public class UserInterface {
     private final QuestionManager qMgr;
     private final AnswerManager aMgr;
     private final Stage primaryStage;
-    private final User currentUser;
+    private final User user;
+    private final UserManager uMgr;
+    private final CommentManager cMgr;
 
     // Panes for navigation
     private final Pane paneMenu = new Pane();
@@ -33,12 +35,14 @@ public class UserInterface {
     private TextArea txtQuestionsList;
     private TextArea txtAnswersList;
 
-    public UserInterface(DatabaseHelper db, QuestionManager qMgr, AnswerManager aMgr, Stage stage, User user) {
+    public UserInterface(DatabaseHelper db, QuestionManager qMgr, AnswerManager aMgr, Stage stage, User user, UserManager uMgr, CommentManager cMgr) {
         this.db = db;
         this.qMgr = qMgr;
         this.aMgr = aMgr;
         this.primaryStage = stage;
-        this.currentUser = user;
+        this.user = user;
+        this.uMgr = uMgr;
+        this.cMgr = cMgr;
     }
 
     /** Entry point after login */
@@ -49,11 +53,11 @@ public class UserInterface {
         primaryStage.show();
     }
 
-    // ---------------- MENU ----------------
+    //          MENU 
     private void buildMenuScreen() {
         paneMenu.getChildren().clear();
 
-        Label title = new Label("Welcome, " + currentUser.getName());
+        Label title = new Label("Welcome, " + user.getName());
         title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
         Button btnQuestions = new Button("Manage Questions");
@@ -61,7 +65,7 @@ public class UserInterface {
 
         Button btnLogout = new Button("Logout");
         btnLogout.setOnAction(e -> {
-            new UserLoginPage(db, qMgr, aMgr).show(primaryStage);
+            new UserLoginPage(db, qMgr, aMgr, uMgr, cMgr).show(primaryStage);
         });
 
         VBox vbox = new VBox(20, title, btnQuestions, btnLogout);
@@ -72,7 +76,7 @@ public class UserInterface {
         theRoot.getChildren().setAll(paneMenu);
     }
 
-    // ---------------- QUESTIONS ----------------
+    //       QUESTIONS 
     private void buildQuestionsScreen() {
         paneQuestions.getChildren().clear();
 
@@ -88,7 +92,7 @@ public class UserInterface {
         Button btnAdd = new Button("Add Question");
         btnAdd.setOnAction(e -> {
             try {
-                db.addQuestion(txtTitle.getText(), txtDesc.getText(), currentUser.getEmail());
+                db.addQuestion(txtTitle.getText(), txtDesc.getText(), user.getEmail());
                 txtTitle.clear();
                 txtDesc.clear();
             } catch (SQLException ex) { ex.printStackTrace(); }
@@ -168,7 +172,7 @@ public class UserInterface {
         theRoot.getChildren().setAll(paneQuestions);
     }
 
-    // ---------------- ANSWERS ----------------
+    //   ANSWERS 
     private void buildAnswersScreen(int questionId) {
         paneAnswers.getChildren().clear();
 
@@ -181,7 +185,7 @@ public class UserInterface {
         Button btnAdd = new Button("Add Answer");
         btnAdd.setOnAction(e -> {
             try {
-                db.addAnswer(questionId, txtAnswer.getText(), currentUser.getEmail());
+                db.addAnswer(questionId, txtAnswer.getText(), user.getEmail());
                 txtAnswer.clear();
             } catch (SQLException ex) { ex.printStackTrace(); }
         });

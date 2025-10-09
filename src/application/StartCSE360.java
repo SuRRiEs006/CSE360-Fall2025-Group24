@@ -17,13 +17,17 @@ public class StartCSE360 extends Application {
     public void start(Stage primaryStage) {
         try {
             DatabaseHelper db = new DatabaseHelper();
-            db.connectToDatabase(); 
-            // 2. Create managers that share the same connection
+            db.connectToDatabase();
+
+            // Managers that exist before login
             QuestionManager qMgr = new QuestionManager(db.getConnection());
             AnswerManager aMgr = new AnswerManager(db.getConnection());
+            UserManager uMgr = new UserManager(db);
+            CommentManager cMgr = new CommentManager(db);
 
-            // 3. Decide which page to show first
-            new SetupLoginSelectionPage(db, qMgr, aMgr).show(primaryStage);
+            // Show the login/role selection page first
+            new SetupLoginSelectionPage(db, qMgr, aMgr, uMgr, cMgr).show(primaryStage);
+
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -11,16 +11,24 @@ import javafx.stage.Stage;
 import java.sql.SQLException;
 
 public class UpdateAccountPage {
-
     private final DatabaseHelper db;
     private final QuestionManager qMgr;
     private final AnswerManager aMgr;
+    private final UserManager uMgr;
+    private final CommentManager cMgr;
     private final User user;
 
-    public UpdateAccountPage(DatabaseHelper db, QuestionManager qMgr, AnswerManager aMgr, User user) {
+    public UpdateAccountPage(DatabaseHelper db,
+                             QuestionManager qMgr,
+                             AnswerManager aMgr,
+                             UserManager uMgr,
+                             CommentManager cMgr,
+                             User user) {
         this.db = db;
         this.qMgr = qMgr;
         this.aMgr = aMgr;
+        this.uMgr = uMgr;
+        this.cMgr = cMgr;
         this.user = user;
     }
 
@@ -72,7 +80,14 @@ public class UpdateAccountPage {
         });
 
         Button backBtn = new Button("Back");
-        backBtn.setOnAction(e -> new WelcomeLoginPage(db, qMgr, aMgr, user).show(stage));
+        backBtn.setOnAction(e -> {
+            
+            RouteManager router = new RouteManager(db, qMgr, aMgr, uMgr, cMgr, user);
+            
+            String role = user.getRoles().iterator().next();
+            router.showDashboardFor(user, role, stage);
+        });
+
 
         GridPane grid = new GridPane();
         grid.setVgap(10);

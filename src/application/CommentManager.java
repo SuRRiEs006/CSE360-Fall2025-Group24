@@ -1,5 +1,6 @@
 package application;
 
+import databasePart1.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,6 +16,11 @@ public class CommentManager {
     public CommentManager(Connection connection) {
         this.connection = connection;
     }
+    public CommentManager(DatabaseHelper db) {
+        this.connection = db.getConnection();
+    }
+
+
 
     public Comment addCommentToQuestion(int questionId, String text, String createdBy) throws SQLException {
         String sql = "INSERT INTO comments (questionId, text, createdBy) VALUES (?, ?, ?)";

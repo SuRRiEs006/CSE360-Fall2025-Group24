@@ -27,58 +27,68 @@ public class DatabaseHelper {
 	static final String PASS = ""; 
 
 	private Connection connection = null;
-	private Statement statement = null; 
 	
 	//	PreparedStatement pstmt
 	public void connectToDatabase() throws SQLException {
         try {
             Class.forName(JDBC_DRIVER);
             connection = DriverManager.getConnection(DB_URL, USER, PASS);
-            statement = connection.createStatement();
-            createTables();
+            initSchema(); // ✅ run schema setup here
         } catch (ClassNotFoundException e) {
             throw new SQLException("JDBC Driver not found", e);
         }
-	
-	try (Statement statement = connection.createStatement()) {
-	    statement.execute("DROP TABLE IF EXISTS cse360users");
+    }
 
-	    String userTable = "CREATE TABLE cse360users (" +
-	            "id INT AUTO_INCREMENT PRIMARY KEY, " +
-	            "password VARCHAR(255), " +
-	            "role VARCHAR(20), " +
-	            "name VARCHAR(255), " +
-	            "address VARCHAR(255), " +
-	            "email VARCHAR(255) UNIQUE)";
-	    statement.execute(userTable);
-		}
-	}
+    private void initSchema() throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            // Drop in correct order
+            stmt.execute("DROP TABLE IF EXISTS USER_ROLES");
+            stmt.execute("DROP TABLE IF EXISTS USERS CASCADE");
 
+            // Recreate USERS
+            stmt.execute("CREATE TABLE USERS (" +
+                         "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                         "email VARCHAR(255) UNIQUE, " +
+                         "password VARCHAR(255), " +
+                         "name VARCHAR(255), " +
+                         "address VARCHAR(255))");
 
+            // Recreate USER_ROLES
+            stmt.execute("CREATE TABLE USER_ROLES (" +
+                         "user_id INT, " +
+                         "role VARCHAR(50), " +
+                         "PRIMARY KEY (user_id, role), " +
+                         "FOREIGN KEY (user_id) REFERENCES USERS(id) ON DELETE CASCADE)");
+        }
+    }
+    
 	// Create table with new fields
-	public void createTables() throws SQLException {
-		String userTable = "CREATE TABLE IF NOT EXISTS cse360users (" +
-		        "id INT AUTO_INCREMENT PRIMARY KEY, " +
-		        "password VARCHAR(255), " +
-		        "role VARCHAR(20), " +
-		        "name VARCHAR(255), " +
-		        "address VARCHAR(255), " +
-		        "email VARCHAR(255) UNIQUE)";
-		statement.execute(userTable);
-		
-		String questionTable = "CREATE TABLE IF NOT EXISTS Questions (" +
-		        "id INT AUTO_INCREMENT PRIMARY KEY, " +
-		        "title VARCHAR(255), " +
-		        "description VARCHAR(500))";
-		statement.execute(questionTable);
-		
-		String answerTable = "CREATE TABLE IF NOT EXISTS Answers (" +
-		        "id INT AUTO_INCREMENT PRIMARY KEY, " +
-		        "questionId INT, " +
-		        "text VARCHAR(500), " +
-		        "FOREIGN KEY (questionId) REFERENCES Questions(id) ON DELETE CASCADE)";
-		statement.execute(answerTable);
-	}	
+    public void createTables() throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            String userTable = "CREATE TABLE IF NOT EXISTS USERS (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "password VARCHAR(255), " +   
+                    "name VARCHAR(255), " +
+                    "address VARCHAR(255), " +
+                    "email VARCHAR(255) UNIQUE)";
+            stmt.execute(userTable);
+
+            String questionTable = "CREATE TABLE IF NOT EXISTS Questions (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "title VARCHAR(255), " +
+                    "description VARCHAR(500))";
+            stmt.execute(questionTable);
+
+            String answerTable = "CREATE TABLE IF NOT EXISTS Answers (" +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "questionId INT, " +
+                    "text VARCHAR(500), " +
+                    "FOREIGN KEY (questionId) REFERENCES Questions(id) ON DELETE CASCADE)";
+            stmt.execute(answerTable);
+        }
+    }
+
+	
 		/* Create the invitation codes table
 	    String invitationCodesTable = "CREATE TABLE IF NOT EXISTS InvitationCodes ("
 	            + "code VARCHAR(10) PRIMARY KEY, "
@@ -89,47 +99,18 @@ public class DatabaseHelper {
 
 	// Check if the database is empty
 	public boolean isDatabaseEmpty() throws SQLException {
-		String query = "SELECT COUNT(*) AS count FROM cse360users";
-		ResultSet resultSet = statement.executeQuery(query);
-		if (resultSet.next()) {
-			return resultSet.getInt("count") == 0;
-		}
-		return true;
-	}
-
-	// Registers a new user in the database.
-	public void registerFull(User user) throws SQLException {
-	    // Check if this is the first account
-	    String countQuery = "SELECT COUNT(*) FROM cse360users";
-	    int count = 0;
+	    String query = "SELECT COUNT(*) AS count FROM USERS";
 	    try (Statement stmt = connection.createStatement();
-	         ResultSet rs = stmt.executeQuery(countQuery)) {
-	        if (rs.next()) {
-	            count = rs.getInt(1);
+	         ResultSet resultSet = stmt.executeQuery(query)) {
+	        if (resultSet.next()) {
+	            return resultSet.getInt("count") == 0;
 	        }
 	    }
-
-	    // Assign role
-	    if (count == 0) {
-	        user.setRole("ADMIN");   // first user is admin
-	    } else {
-	        user.setRole("STUDENT"); // everyone else is student
-	    }
-
-	    // Now actually insert into the table
-	    String sql = "INSERT INTO cse360users (name, address, email, password, role) VALUES (?, ?, ?, ?, ?)";
-	    try (PreparedStatement ps = connection.prepareStatement(sql)) {
-	        ps.setString(1, user.getName());
-	        ps.setString(2, user.getAddress());
-	        ps.setString(3, user.getEmail());
-	        ps.setString(4, user.getPassword());
-	        ps.setString(5, user.getRole());
-	        ps.executeUpdate();
-	    }
+	    return true;
 	}
 	
 	public int getUserCount() throws SQLException {
-	    String sql = "SELECT COUNT(*) FROM CSE360USERS";
+	    String sql = "SELECT COUNT(*) FROM USERS";
 	    try (Statement stmt = connection.createStatement();
 	         ResultSet rs = stmt.executeQuery(sql)) {
 	        if (rs.next()) {
@@ -139,35 +120,73 @@ public class DatabaseHelper {
 	    return 0;
 	}
 
-	// Validates a user has login credentials.
-	public User login(String email, String password, String role) throws SQLException {
-	    String query = "SELECT * FROM cse360users WHERE email = ? AND password = ? AND role = ?";
-	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-	        pstmt.setString(1, email);
-	        pstmt.setString(2, password);
-	        pstmt.setString(3, role);
-	        try (ResultSet rs = pstmt.executeQuery()) {
+	// Registers a new user in the database.
+	public void registerFull(User user) throws SQLException {
+	    // Check how many users exist *before* inserting
+	    boolean firstUser = getUserCount() == 0;
+
+	    String sql = "INSERT INTO USERS (name, address, email, password) VALUES (?, ?, ?, ?)";
+	    try (PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+	        ps.setString(1, user.getName());
+	        ps.setString(2, user.getAddress());
+	        ps.setString(3, user.getEmail());
+	        ps.setString(4, user.getPassword());
+	        ps.executeUpdate();
+
+	        try (ResultSet rs = ps.getGeneratedKeys()) {
 	            if (rs.next()) {
-	                return new User(
-	                    rs.getString("password"),
-	                    rs.getString("role"),
-	                    rs.getString("name"),
-	                    rs.getString("address"),
-	                    rs.getString("email")
-	                );
+	                int userId = rs.getInt(1);
+
+	                String role = firstUser ? "ADMIN" : "STUDENT";
+	                user.addRole(role);
+
+	                try (PreparedStatement rolePs = connection.prepareStatement(
+	                        "INSERT INTO USER_ROLES (user_id, role) VALUES (?, ?)")) {
+	                    rolePs.setInt(1, userId);
+	                    rolePs.setString(2, role);
+	                    rolePs.executeUpdate();
+	                }
 	            }
 	        }
 	    }
-	    return null; // login failed
 	}
-	
-	public User login(User user) throws SQLException {
-	    return login(user.getEmail(), user.getPassword(), user.getRole());
+
+	// Validates a user has login credentials.
+	public User login(String email, String password) throws SQLException {
+	    String sql = "SELECT id, name, address, email, password FROM USERS WHERE email = ? AND password = ?";
+	    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+	        ps.setString(1, email);
+	        ps.setString(2, password);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) {
+	                int id = rs.getInt("id");
+	                String name = rs.getString("name");
+	                String address = rs.getString("address");
+
+	                // Fetch roles
+	                List<String> roles = new ArrayList<>();
+	                try (PreparedStatement rolePs = connection.prepareStatement(
+	                        "SELECT role FROM USER_ROLES WHERE user_id = ?")) {
+	                    rolePs.setInt(1, id);
+	                    try (ResultSet roleRs = rolePs.executeQuery()) {
+	                        while (roleRs.next()) {
+	                            roles.add(roleRs.getString("role").toUpperCase());
+	                        }
+	                    }
+	                }
+
+	                User user = new User(id, name, email, password, roles);
+	                user.setAddress(address);
+	                return user;
+	            }
+	        }
+	    }
+	    return null; // invalid login
 	}
 	
 	// Checks if a user already exists in the database based on their userName.
 	public boolean doesUserExist(String userName) {
-	    String query = "SELECT COUNT(*) FROM cse360users WHERE userName = ?";
+	    String query = "SELECT COUNT(*) FROM USERS WHERE userName = ?";
 	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
 	        
 	        pstmt.setString(1, userName);
@@ -185,7 +204,7 @@ public class DatabaseHelper {
 	
 	// Retrieves the role of a user from the database using their UserName.
 	public String getUserRole(String email) {
-	    String query = "SELECT role FROM cse360users WHERE email = ?";
+	    String query = "SELECT role FROM USERS WHERE email = ?";
 	    try (PreparedStatement pstmt = connection.prepareStatement(query)) {
 	        pstmt.setString(1, email);
 	        ResultSet rs = pstmt.executeQuery();
@@ -200,7 +219,7 @@ public class DatabaseHelper {
 	}
 	
 	public void updateUserRole(String email, String newRole) throws SQLException {
-	    String sql = "UPDATE cse360users SET role = ? WHERE email = ?";
+	    String sql = "UPDATE USERS SET role = ? WHERE email = ?";
 	    try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
 	        pstmt.setString(1, newRole);
 	        pstmt.setString(2, email);
@@ -236,26 +255,39 @@ public class DatabaseHelper {
 	}
 	
 	// Fetch user by email
-	public User getUserByEmail(String email) {
-	    String sql = "SELECT * FROM CSE360USERS WHERE email = ?";
+	public User getUserByEmail(String email) throws SQLException {
+	    String sql = "SELECT id, name, address, email, password FROM USERS WHERE email = ?";
 	    try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
 	        pstmt.setString(1, email);
-	        ResultSet rs = pstmt.executeQuery();
-	        if (rs.next()) {
-	            return new User(
-	                rs.getString("password"),
-	                rs.getString("role"),
-	                rs.getString("name"),
-	                rs.getString("address"),
-	                rs.getString("email")
-	            );
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            if (rs.next()) {
+	                int id = rs.getInt("id");
+	                String name = rs.getString("name");
+	                String address = rs.getString("address");
+	                String password = rs.getString("password");
+
+	                // Fetch roles
+	                List<String> roles = new ArrayList<>();
+	                try (PreparedStatement rolePs = connection.prepareStatement(
+	                        "SELECT role FROM USER_ROLES WHERE user_id = ?")) {
+	                    rolePs.setInt(1, id);
+	                    try (ResultSet roleRs = rolePs.executeQuery()) {
+	                        while (roleRs.next()) {
+	                            roles.add(roleRs.getString("role").toUpperCase());
+	                        }
+	                    }
+	                }
+
+	                User user = new User(id, name, email, password, roles);
+	                user.setAddress(address);
+	                user.setName(name);
+	                return user;
+	            }
 	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
 	    }
 	    return null;
 	}
-
+	
 	// Update profile (email locked)
 	public void updateUserProfile(String email, String name, String address, String newPassword) throws SQLException {
 	    String sql = "UPDATE CSE360USERS SET name=?, address=?, password=? WHERE email=?";
@@ -270,7 +302,7 @@ public class DatabaseHelper {
 	
 	public List<User> getPendingUsers() throws SQLException {
 	    List<User> pending = new ArrayList<>();
-	    String sql = "SELECT * FROM cse360users WHERE role IS NULL";
+	    String sql = "SELECT * FROM USERS WHERE role IS NULL";
 	    try (Statement stmt = connection.createStatement();
 	         ResultSet rs = stmt.executeQuery(sql)) {
 	        while (rs.next()) {
@@ -425,16 +457,13 @@ public class DatabaseHelper {
 	
 	// Closes the database connection and statement.
 	public void closeConnection() {
-		try{ 
-			if(statement!=null) statement.close(); 
-		} catch(SQLException se2) { 
-			se2.printStackTrace();
-		} 
-		try { 
-			if(connection!=null) connection.close(); 
-		} catch(SQLException se){ 
-			se.printStackTrace(); 
-		} 
+	    try {
+	        if (connection != null && !connection.isClosed()) {
+	            connection.close();
+	        }
+	    } catch (SQLException se) {
+	        se.printStackTrace();
+	    }
 	}
 
 }

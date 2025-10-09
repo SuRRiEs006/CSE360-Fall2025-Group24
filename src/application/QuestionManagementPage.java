@@ -17,19 +17,23 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 public class QuestionManagementPage {
-    private final DatabaseHelper db;
+	private final DatabaseHelper db;
     private final QuestionManager qMgr;
     private final AnswerManager aMgr;
+    private final UserManager uMgr;
+    private final CommentManager cMgr;
     private final User user;
 
     private TableView<Question> questionTable;
     private TableView<Answer> answerTable;
 
-    public QuestionManagementPage(DatabaseHelper db, QuestionManager qMgr, AnswerManager aMgr, User user) {
+    public QuestionManagementPage(DatabaseHelper db, QuestionManager qMgr, AnswerManager aMgr, User user, UserManager uMgr, CommentManager cMgr) {
         this.db = db;
         this.qMgr = qMgr;
         this.aMgr = aMgr;
         this.user = user;
+        this.uMgr = uMgr;
+        this.cMgr = cMgr;
     }
 
     public void show(Stage stage) {
@@ -115,7 +119,7 @@ public class QuestionManagementPage {
         manageAnswersBtn.setOnAction(event -> {
             Question selectedQ = questionTable.getSelectionModel().getSelectedItem();
             if (selectedQ != null) {
-                new AnswerManagementPage(db, qMgr, aMgr, user, selectedQ).show(stage);
+                new AnswerManagementPage(db, qMgr, aMgr, user, selectedQ, uMgr, cMgr).show(stage);
             }
         });
 
@@ -187,7 +191,7 @@ public class QuestionManagementPage {
 
         // Back Button
         Button backBtn = new Button("Back to Dashboard");
-        backBtn.setOnAction(e -> new AdminDashboardPage(db, qMgr, aMgr, user).show(stage));
+        backBtn.setOnAction(e -> new AdminDashboardPage(db, qMgr, aMgr, uMgr, cMgr, user).show(stage));
 
         VBox root = new VBox(15, title, questionTable, qControls, answerTable, aControls, backBtn);
         root.setPadding(new Insets(15));

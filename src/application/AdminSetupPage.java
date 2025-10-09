@@ -66,8 +66,12 @@ public class AdminSetupPage {
 
                 System.out.println("Administrator setup completed.");
 
-                // Navigate to Welcome/Login page
-                new WelcomeLoginPage(db, qMgr, aMgr, user).show(primaryStage);
+                UserManager uMgr = new UserManager(db);
+                CommentManager cMgr = new CommentManager(db.getConnection());
+
+                // Route directly to the admin dashboard
+                RouteManager router = new RouteManager(db, qMgr, aMgr, uMgr, cMgr, user);
+                router.showDashboardFor(user, "ADMIN", primaryStage);
 
             } catch (SQLException e) {
                 errorLabel.setText("Database error: " + e.getMessage());

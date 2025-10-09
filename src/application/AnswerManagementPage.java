@@ -19,27 +19,33 @@ public class AnswerManagementPage {
 	private final DatabaseHelper db;
 	private final QuestionManager qMgr;
 	private final AnswerManager aMgr;
+	private final UserManager uMgr;
 	private final User user;
 	private final Question questionFilter;
+	private final CommentManager cMgr;
 
 	private TableView<Answer> answerTable;
 
 	public AnswerManagementPage(DatabaseHelper db, QuestionManager qMgr, AnswerManager aMgr, User user,
-			Question questionFilter) {
+			Question questionFilter, UserManager uMgr, CommentManager cMgr) {
 		this.db = db;
 		this.qMgr = qMgr;
 		this.aMgr = aMgr;
+		this.uMgr = uMgr;
 		this.user = user;
 		this.questionFilter = questionFilter;
+		this.cMgr = cMgr;
 	}
 	
 	public AnswerManagementPage(DatabaseHelper db, QuestionManager qMgr,
-            AnswerManager aMgr, User user) {
+            AnswerManager aMgr, User user, UserManager uMgr, CommentManager cMgr) {
 		this.db = db;
 		this.qMgr = qMgr;
 		this.aMgr = aMgr;
 		this.user = user;
 		this.questionFilter = null; // means "show all answers"
+		this.uMgr = uMgr;
+		this.cMgr = cMgr;
 	}
 
 	public void show(Stage stage) {
@@ -187,7 +193,7 @@ public class AnswerManagementPage {
 
 		// Back Button
 		Button backBtn = new Button("Back to Dashboard");
-		backBtn.setOnAction(e -> new AdminDashboardPage(db, qMgr, aMgr, user).show(stage));
+		backBtn.setOnAction(e -> new AdminDashboardPage(db, qMgr, aMgr, uMgr, cMgr, user).show(stage));
 
 		VBox root = new VBox(15, title, answerTable, controls, backBtn);
 		root.setPadding(new Insets(15));

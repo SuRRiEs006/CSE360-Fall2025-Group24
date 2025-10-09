@@ -18,11 +18,15 @@ public class UserLoginPage {
 	private final DatabaseHelper db;
     private final QuestionManager qMgr;
     private final AnswerManager aMgr;
-
-    public UserLoginPage(DatabaseHelper db, QuestionManager qMgr, AnswerManager aMgr) {
+    private final UserManager uMgr;
+    private final CommentManager cMgr;
+    
+    public UserLoginPage(DatabaseHelper db, QuestionManager qMgr, AnswerManager aMgr, UserManager uMgr, CommentManager cMgr) {
         this.db = db;
         this.qMgr = qMgr;
         this.aMgr = aMgr;
+        this.uMgr = uMgr;
+        this.cMgr = cMgr;
     }
 
 
@@ -47,28 +51,35 @@ public class UserLoginPage {
         roleBox.setMaxWidth(250);
 
         Button loginButton = new Button("Login");
-        
+
         loginButton.setOnAction(a -> {
             String email = emailField.getText();
             String password = passwordField.getText();
-            String role = roleBox.getValue();
+            String selectedRole = roleBox.getValue();
 
-            if (role == null) {
+            if (selectedRole == null) {
                 errorLabel.setText("Please select a role.");
                 return;
             }
 
             try {
-                User loggedIn = db.login(email, password, role);
+                User loggedIn = db.login(email, password); // fetches user + roles from DB
 
                 if (loggedIn != null) {
-                    if ("admin".equalsIgnoreCase(role)) {
-                        new AdminDashboardPage(db, qMgr, aMgr, loggedIn).show(primaryStage);
+                    // Check if the selected role is actually assigned to this user
+                    if (loggedIn.hasRole(selectedRole)) {
+                        UserManager uMgr = new UserManager(db);
+                        CommentManager cMgr = new CommentManager(db.getConnection());
+
+                        // Use RouteManager to centralize routing
+                        RouteManager router = new RouteManager(db, qMgr, aMgr, uMgr, cMgr, loggedIn);
+                        router.showDashboardFor(loggedIn, selectedRole, primaryStage);
+
                     } else {
-                        new WelcomeLoginPage(db, qMgr, aMgr, loggedIn).show(primaryStage);
+                        errorLabel.setText("You do not have the role: " + selectedRole);
                     }
                 } else {
-                    errorLabel.setText("Invalid credentials or role.");
+                    errorLabel.setText("Invalid email or password.");
                 }
             } catch (SQLException e) {
                 errorLabel.setText("Database error: " + e.getMessage());
