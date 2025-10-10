@@ -55,25 +55,36 @@ public class UpdateAccountPage {
         Button saveBtn = new Button("Save Changes");
         saveBtn.setOnAction(e -> {
             try {
+                UserManager uMgr = new UserManager(db);
+
                 // verify current password
-                if (!db.verifyPassword(user.getEmail(), currentPass.getText())) {
+                if (!uMgr.verifyPassword(user.getEmail(), currentPass.getText())) {
                     status.setText("Current password incorrect.");
                     return;
                 }
+
                 // check new password match
                 if (!newPass.getText().equals(confirmPass.getText())) {
                     status.setText("New passwords do not match.");
                     return;
                 }
-                // update DB
-                db.updateUser(user.getEmail(), nameField.getText(), addressField.getText(), newPass.getText());
-                
+
+                // update DB (lock email, update name/address/password)
+                uMgr.updateUserProfile(user.getEmail(),
+                                       nameField.getText(),
+                                       addressField.getText(),
+                                       newPass.getText());
+
+                // update in-memory object
                 user.setName(nameField.getText());
                 user.setAddress(addressField.getText());
                 user.setPassword(newPass.getText());
-                
+
+                status.setStyle("-fx-text-fill: green;");
                 status.setText("Account updated successfully.");
+                
             } catch (SQLException ex) {
+                status.setStyle("-fx-text-fill: red;");
                 status.setText("Error: " + ex.getMessage());
                 ex.printStackTrace();
             }

@@ -60,9 +60,11 @@ public class AdminSetupPage {
             }
 
             try {
-                // Role will be assigned automatically in DatabaseHelper (first = admin)
-                User user = new User(password, null, name, address, email);
-                db.registerFull(user);
+                
+            	UserManager userManager = new UserManager(db);
+
+                // This automatically assigns ADMIN if first user, else STUDENT
+                userManager.addUser(email, password, name, address);
 
                 System.out.println("Administrator setup completed.");
 

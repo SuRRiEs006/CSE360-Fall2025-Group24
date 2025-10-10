@@ -58,30 +58,34 @@ public class UserLoginPage {
             String selectedRole = roleBox.getValue();
 
             if (selectedRole == null) {
+                errorLabel.setStyle("-fx-text-fill: red;");
                 errorLabel.setText("Please select a role.");
                 return;
             }
 
             try {
-                User loggedIn = db.login(email, password); // fetches user + roles from DB
+                UserManager uMgr = new UserManager(db);
+                User loggedIn = uMgr.login(email, password);  // now handled by UserManager
 
                 if (loggedIn != null) {
                     // Check if the selected role is actually assigned to this user
                     if (loggedIn.hasRole(selectedRole)) {
-                        UserManager uMgr = new UserManager(db);
                         CommentManager cMgr = new CommentManager(db.getConnection());
 
-                        // Use RouteManager to centralize routing
+                        // Centralized routing
                         RouteManager router = new RouteManager(db, qMgr, aMgr, uMgr, cMgr, loggedIn);
                         router.showDashboardFor(loggedIn, selectedRole, primaryStage);
 
                     } else {
+                        errorLabel.setStyle("-fx-text-fill: red;");
                         errorLabel.setText("You do not have the role: " + selectedRole);
                     }
                 } else {
+                    errorLabel.setStyle("-fx-text-fill: red;");
                     errorLabel.setText("Invalid email or password.");
                 }
             } catch (SQLException e) {
+                errorLabel.setStyle("-fx-text-fill: red;");
                 errorLabel.setText("Database error: " + e.getMessage());
                 e.printStackTrace();
             }
@@ -94,5 +98,5 @@ public class UserLoginPage {
         primaryStage.setScene(new Scene(layout, 800, 400));
         primaryStage.setTitle("User Login");
         primaryStage.show();
-    }
+    }   
 }

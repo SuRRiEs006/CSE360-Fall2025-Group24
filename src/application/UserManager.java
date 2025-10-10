@@ -48,6 +48,7 @@ public class UserManager {
         }
     }
     
+    // for Admin use
     public void updateUserAccount(int userId, String name, String email, String password, String address) throws SQLException {
         String sql = "UPDATE USERS SET name = ?, email = ?, password = ?, address = ? WHERE id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -56,6 +57,18 @@ public class UserManager {
             ps.setString(3, password); 
             ps.setString(4, address);
             ps.setInt(5, userId);
+            ps.executeUpdate();
+        }
+    }
+    
+    // for all other user's
+    public void updateUserProfile(String email, String name, String address, String newPassword) throws SQLException {
+        String sql = "UPDATE USERS SET name = ?, address = ?, password = ? WHERE email = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, name);
+            ps.setString(2, address);
+            ps.setString(3, newPassword);
+            ps.setString(4, email);
             ps.executeUpdate();
         }
     }
@@ -101,6 +114,40 @@ public class UserManager {
 
         return new ArrayList<>(userMap.values());
     }
+    
+    public User getUserByEmail(String email) throws SQLException {
+        String sql = """
+            SELECT u.id, u.name, u.email, u.password, u.address, ur.role
+            FROM USERS u
+            LEFT JOIN USER_ROLES ur ON u.id = ur.user_id
+            WHERE u.email = ?
+        """;
+
+        User user = null;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    if (user == null) {
+                        user = new User(
+                            rs.getInt("id"),
+                            rs.getString("name"),
+                            rs.getString("email"),
+                            rs.getString("password"),
+                            new ArrayList<>()
+                        );
+                        user.setAddress(rs.getString("address"));
+                    }
+                    String role = rs.getString("role");
+                    if (role != null) {
+                        user.addRole(role.toUpperCase());
+                    }
+                }
+            }
+        }
+        return user;
+    }
 
     public void addRoleToUser(int userId, String role) throws SQLException {
     	String normalized = role.toUpperCase();
@@ -113,32 +160,62 @@ public class UserManager {
     }
     
     public void removeRoleFromUser(int userId, String role, int currentAdminId) throws SQLException {
-        if ("admin".equalsIgnoreCase(role)) {
+        String normalized = role.toUpperCase();
+
+        if ("ADMIN".equals(normalized)) {
             if (userId == currentAdminId) {
                 throw new IllegalStateException("You cannot remove your own admin role.");
             }
-            if (!hasAtLeastOneOtherAdmin(userId)) {
+            if (!isLastAdmin(userId)) {
                 throw new IllegalStateException("There must always be at least one admin.");
             }
         }
+
         try (PreparedStatement ps = connection.prepareStatement(
                 "DELETE FROM USER_ROLES WHERE user_id = ? AND role = ?")) {
             ps.setInt(1, userId);
-            ps.setString(2, role);
+            ps.setString(2, normalized);
             ps.executeUpdate();
         }
     }
+    
+    public User login(String email, String password) throws SQLException {
+        String sql = """
+            SELECT u.id, u.name, u.email, u.password, u.address, ur.role
+            FROM USERS u
+            LEFT JOIN USER_ROLES ur ON u.id = ur.user_id
+            WHERE u.email = ?
+        """;
 
-    private boolean hasAtLeastOneOtherAdmin(int excludingUserId) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM USER_ROLES WHERE role = 'admin' AND user_id <> ?";
+        User user = null;
+
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, excludingUserId);
+            ps.setString(1, email);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() && rs.getInt(1) > 0;
+                while (rs.next()) {
+                    if (user == null) {
+                        String storedPassword = rs.getString("password");
+                        if (!storedPassword.equals(password)) {
+                            return null; // invalid password
+                        }
+                        user = new User(
+                            rs.getInt("id"),
+                            rs.getString("name"),
+                            rs.getString("email"),
+                            storedPassword,
+                            new ArrayList<>()
+                        );
+                        user.setAddress(rs.getString("address"));
+                    }
+                    String role = rs.getString("role");
+                    if (role != null) {
+                        user.addRole(role.toUpperCase());
+                    }
+                }
             }
         }
+        return user;
     }
-    
     
     // Checks if the given user is the last admin in the system.
     public boolean isLastAdmin(int userId) throws SQLException {
@@ -188,5 +265,18 @@ public class UserManager {
             ps.setInt(1, userId);
             ps.executeUpdate();
         }
+    }
+    
+    public boolean verifyPassword(String email, String password) throws SQLException {
+        String sql = "SELECT password FROM USERS WHERE email = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("password").equals(password);
+                }
+            }
+        }
+        return false;
     }
 }

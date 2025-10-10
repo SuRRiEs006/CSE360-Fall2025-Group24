@@ -92,7 +92,8 @@ public class UserInterface {
         Button btnAdd = new Button("Add Question");
         btnAdd.setOnAction(e -> {
             try {
-                db.addQuestion(txtTitle.getText(), txtDesc.getText(), user.getEmail());
+            	QuestionManager qMgr = new QuestionManager(db.getConnection());
+            	qMgr.addQuestion(txtTitle.getText(), txtDesc.getText(), user.getEmail());
                 txtTitle.clear();
                 txtDesc.clear();
             } catch (SQLException ex) { ex.printStackTrace(); }
@@ -102,7 +103,7 @@ public class UserInterface {
         btnView.setOnAction(e -> {
             try {
                 StringBuilder sb = new StringBuilder();
-                for (Question q : db.getAllQuestions()) {
+                for (Question q : qMgr.getAllQuestions()) {
                     sb.append(q.toString()).append("\n");
                 }
                 txtQuestionsList.setText(sb.toString());
@@ -135,12 +136,16 @@ public class UserInterface {
         TextField txtUpdateDesc = new TextField();
         txtUpdateDesc.setPromptText("New Description");
 
+        QuestionManager qMgr = new QuestionManager(db.getConnection());
+
         Button btnUpdate = new Button("Update Question");
         btnUpdate.setOnAction(e -> {
             try {
                 int id = Integer.parseInt(txtUpdateId.getText());
-                db.updateQuestion(id, txtUpdateTitle.getText(), txtUpdateDesc.getText());
-            } catch (Exception ex) { ex.printStackTrace(); }
+                qMgr.updateQuestion(id, txtUpdateTitle.getText(), txtUpdateDesc.getText());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         });
 
         TextField txtDeleteId = new TextField();
@@ -150,8 +155,10 @@ public class UserInterface {
         btnDelete.setOnAction(e -> {
             try {
                 int id = Integer.parseInt(txtDeleteId.getText());
-                db.deleteQuestion(id);
-            } catch (Exception ex) { ex.printStackTrace(); }
+                qMgr.deleteQuestion(id);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         });
 
         Button btnBack = new Button("Back to Menu");
@@ -182,23 +189,29 @@ public class UserInterface {
         TextField txtAnswer = new TextField();
         txtAnswer.setPromptText("Enter Answer");
 
+        AnswerManager aMgr = new AnswerManager(db.getConnection());
+
         Button btnAdd = new Button("Add Answer");
         btnAdd.setOnAction(e -> {
             try {
-                db.addAnswer(questionId, txtAnswer.getText(), user.getEmail());
+                aMgr.addAnswer(questionId, txtAnswer.getText(), user.getEmail());
                 txtAnswer.clear();
-            } catch (SQLException ex) { ex.printStackTrace(); }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         });
 
         Button btnView = new Button("View Answers");
         btnView.setOnAction(e -> {
             try {
                 StringBuilder sb = new StringBuilder();
-                for (Answer a : db.getAnswersByQuestionId(questionId)) {
+                for (Answer a : aMgr.getAnswersByQuestionId(questionId)) {
                     sb.append(a.toString()).append("\n");
                 }
                 txtAnswersList.setText(sb.toString());
-            } catch (SQLException ex) { ex.printStackTrace(); }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         });
 
         txtAnswersList = new TextArea();
@@ -216,8 +229,10 @@ public class UserInterface {
         btnUpdateAnswer.setOnAction(e -> {
             try {
                 int id = Integer.parseInt(txtUpdateAnswerId.getText());
-                db.updateAnswer(id, txtUpdateAnswerText.getText());
-            } catch (Exception ex) { ex.printStackTrace(); }
+                aMgr.updateAnswer(id, txtUpdateAnswerText.getText());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         });
 
         TextField txtDeleteAnswerId = new TextField();
@@ -227,8 +242,10 @@ public class UserInterface {
         btnDeleteAnswer.setOnAction(e -> {
             try {
                 int id = Integer.parseInt(txtDeleteAnswerId.getText());
-                db.deleteAnswer(id);
-            } catch (Exception ex) { ex.printStackTrace(); }
+                aMgr.deleteAnswer(id);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         });
 
         Button btnBack = new Button("Back to Questions");

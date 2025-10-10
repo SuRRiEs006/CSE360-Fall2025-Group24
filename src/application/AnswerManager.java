@@ -97,6 +97,40 @@ public class AnswerManager {
             ps.setInt(1, answerId);
             ps.executeUpdate();
         }
+        
+        String questionSql = "UPDATE questions SET resolved = TRUE WHERE id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(questionSql)) {
+            ps.setInt(1, questionId);
+            ps.executeUpdate();
+        }
+    }
+    
+    public int countUnreadAnswers(int questionId, String username) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM answers WHERE questionId = ? AND isRead = FALSE AND createdBy <> ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, questionId);
+            ps.setString(2, username); // don’t count your own answers
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+    
+    public void unacceptAnswer(int questionId) throws SQLException {
+        // Clear all accepted answers for this question
+        String resetSql = "UPDATE answers SET accepted = FALSE WHERE questionId = ?";
+        try (PreparedStatement ps = connection.prepareStatement(resetSql)) {
+            ps.setInt(1, questionId);
+            ps.executeUpdate();
+        }
+
+        // Also mark the question as unresolved
+        String questionSql = "UPDATE questions SET resolved = FALSE WHERE id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(questionSql)) {
+            ps.setInt(1, questionId);
+            ps.executeUpdate();
+        }
     }
 
     // Delete an answer

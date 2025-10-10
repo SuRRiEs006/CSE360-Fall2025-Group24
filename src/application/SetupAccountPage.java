@@ -113,16 +113,15 @@ public class SetupAccountPage {
             }
 
             try {
-                User user = new User(password, name, address, email); // use the 4‑arg constructor
-                db.registerFull(user); // DB layer assigns role
+                UserManager uMgr = new UserManager(db);
+
+                uMgr.addUser(email, password, name, address);
 
                 status.setStyle("-fx-text-fill: green;");
                 status.setText("Account created successfully.");
 
-                // Fetch back from DB if you want the fully populated user
-                user = db.getUserByEmail(email);
-                
-                UserManager uMgr = new UserManager(db);
+                User user = uMgr.getUserByEmail(email);
+
                 CommentManager cMgr = new CommentManager(db.getConnection());
 
                 RouteManager router = new RouteManager(db, qMgr, aMgr, uMgr, cMgr, user);
